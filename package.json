@@ -1,0 +1,14 @@
+{
+  "name": "archipelagod",
+  "version": "0.1.0",
+  "description": "Multiplayer island god-game",
+  "scripts": {
+    "start": "node server/src/index.js",
+    "install-deps": "cd server && npm install"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "uuid": "^9.0.0"
+  }
+}
