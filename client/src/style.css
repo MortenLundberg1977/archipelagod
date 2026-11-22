@@ -16,6 +16,7 @@
 
 html, body {
   height: 100%;
+  height: 100dvh;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -97,6 +98,7 @@ button:hover { background: var(--accent); color: var(--bg); }
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh; /* iOS: excludes browser address bar */
   overflow: hidden;
 }
 
