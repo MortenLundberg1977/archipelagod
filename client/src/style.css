@@ -36,7 +36,74 @@ body {
   width: 90%;
 }
 .login-box h1 { font-size: 2rem; color: var(--accent); margin-bottom: 0.5rem; }
-.login-box p  { color: var(--muted); margin-bottom: 1.5rem; }
+.login-box p  { color: var(--muted); margin-bottom: 1rem; }
+
+/* Auth tabs */
+.auth-tabs {
+  display: flex;
+  margin-bottom: 1rem;
+  border: 2px solid var(--border);
+}
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 0.4rem;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 0;
+}
+.tab-btn.active  { background: var(--border); color: var(--text); }
+.tab-btn:hover   { background: var(--border); color: var(--text); }
+
+/* Auth inputs stack */
+#panel-login input, #panel-register input {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.6rem;
+}
+#panel-login button, #panel-register button {
+  width: 100%;
+  margin-top: 0.3rem;
+}
+.auth-error {
+  color: var(--red);
+  font-size: 12px;
+  margin-top: 0.5rem;
+  padding: 0.3rem;
+  border: 1px solid var(--red);
+}
+
+/* Recovery modal */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.modal-box {
+  background: var(--panel);
+  border: 3px solid var(--accent);
+  padding: 2rem;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+}
+.modal-box h2 { color: var(--accent); margin-bottom: 0.75rem; }
+.modal-box p  { color: var(--muted); font-size: 13px; margin-bottom: 1rem; }
+.recovery-code {
+  font-size: 1.8rem;
+  letter-spacing: 0.15em;
+  color: var(--yellow);
+  background: var(--bg);
+  border: 2px solid var(--border);
+  padding: 0.75rem;
+  margin: 1rem 0;
+  font-weight: bold;
+}
+.recovery-name { margin-bottom: 1rem; font-size: 13px; }
+.modal-box button { width: 100%; margin-top: 0.5rem; }
 
 input[type="text"], input[type="number"], select {
   background: var(--bg);

@@ -7,17 +7,53 @@
   <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
-  <!-- Login screen -->
+
+  <!-- ── Login screen ───────────────────────────────────────────────────── -->
   <div id="login-screen">
     <div class="login-box">
       <h1>🏝️ Archipelagod</h1>
       <p>Build your island. Grow your people. Trade with the world.</p>
-      <input id="name-input" type="text" placeholder="Your name" maxlength="20" autofocus>
-      <button id="join-btn">Join Game</button>
+
+      <!-- Tab switcher -->
+      <div class="auth-tabs">
+        <button id="tab-login"    class="tab-btn active">Return to island</button>
+        <button id="tab-register" class="tab-btn">New island</button>
+      </div>
+
+      <!-- Login panel -->
+      <div id="panel-login">
+        <input id="login-name" type="text"     placeholder="Your name"   maxlength="20" autocomplete="username">
+        <input id="login-pin"  type="password" placeholder="4-digit PIN" maxlength="4"
+               pattern="\d{4}" inputmode="numeric" autocomplete="current-password">
+        <button id="login-btn">Set Sail ⛵</button>
+        <div id="login-error" class="auth-error hidden"></div>
+      </div>
+
+      <!-- Register panel -->
+      <div id="panel-register" class="hidden">
+        <input id="reg-name"  type="text"     placeholder="Choose a name" maxlength="20" autocomplete="username">
+        <input id="reg-pin"   type="password" placeholder="Choose a 4-digit PIN" maxlength="4"
+               pattern="\d{4}" inputmode="numeric" autocomplete="new-password">
+        <input id="reg-pin2"  type="password" placeholder="Repeat PIN"    maxlength="4"
+               pattern="\d{4}" inputmode="numeric" autocomplete="new-password">
+        <button id="register-btn">Found Island 🏝️</button>
+        <div id="reg-error" class="auth-error hidden"></div>
+      </div>
     </div>
   </div>
 
-  <!-- Game screen -->
+  <!-- ── Recovery code modal (shown once after registration) ───────────── -->
+  <div id="recovery-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h2>🗺️ Island Passport</h2>
+      <p>Write this down or give it to your teacher.<br>You'll need it if you forget your PIN.</p>
+      <div id="recovery-code-display" class="recovery-code"></div>
+      <p class="recovery-name">Island: <strong id="recovery-island-name"></strong></p>
+      <button id="recovery-ok-btn" onclick="dismissRecovery()">Got it! Start playing →</button>
+    </div>
+  </div>
+
+  <!-- ── Game screen ────────────────────────────────────────────────────── -->
   <div id="game-screen" class="hidden">
     <header>
       <h2 id="island-name">🏝️</h2>
@@ -47,7 +83,7 @@
         <div id="placement-hint" class="hidden"></div>
 
         <div id="place-panel">
-          <h4>Place a unit</h4>
+          <h4>Place a unit — tap button then tap the map</h4>
           <div id="place-buttons"></div>
         </div>
       </section>

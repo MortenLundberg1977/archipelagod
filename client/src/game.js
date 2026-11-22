@@ -30,28 +30,95 @@ function escapeHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ── Login ────────────────────────────────────────────────────────────────────
+// ── Login / Register ──────────────────────────────────────────────────────────
 function setupLogin() {
-  const joinBtn   = $('join-btn');
-  const nameInput = $('name-input');
-  joinBtn.addEventListener('click', doJoin);
-  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') doJoin(); });
+  // Tab switching
+  $('tab-login').addEventListener('click', () => {
+    $('tab-login').classList.add('active');
+    $('tab-register').classList.remove('active');
+    $('panel-login').classList.remove('hidden');
+    $('panel-register').classList.add('hidden');
+  });
+  $('tab-register').addEventListener('click', () => {
+    $('tab-register').classList.add('active');
+    $('tab-login').classList.remove('active');
+    $('panel-register').classList.remove('hidden');
+    $('panel-login').classList.add('hidden');
+  });
 
-  function doJoin() {
-    const name = nameInput.value.trim();
-    if (!name) { toast('Enter your name!'); return; }
-    socket.emit(EVENTS.JOIN_GAME, { name }, (res) => {
-      if (!res.ok) { toast('Could not join — try again'); return; }
-      myIsland   = res.island;
-      worldState = res.world;
-      window._currentIsland = myIsland;
-      $('login-screen').classList.add('hidden');
-      $('game-screen').classList.remove('hidden');
-      renderAll();
-      setupMapEvents();
-      toast(res.rejoined ? 'Welcome back! 🏝️' : 'Your island awaits! 🏝️');
+  // Login
+  $('login-btn').addEventListener('click', doLogin);
+  [$('login-name'), $('login-pin')].forEach(el =>
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); }));
+
+  function doLogin() {
+    const name = $('login-name').value.trim();
+    const pin  = $('login-pin').value.trim();
+    const err  = $('login-error');
+    err.classList.add('hidden');
+    if (!name) return showErr(err, 'Enter your name');
+    if (!/^\d{4}$/.test(pin)) return showErr(err, 'PIN must be 4 digits');
+
+    $('login-btn').disabled = true;
+    socket.emit(EVENTS.LOGIN, { name, pin }, (res) => {
+      $('login-btn').disabled = false;
+      if (!res.ok) return showErr(err, res.error);
+      enterGame(res);
     });
   }
+
+  // Register
+  $('register-btn').addEventListener('click', doRegister);
+  [$('reg-name'), $('reg-pin'), $('reg-pin2')].forEach(el =>
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); }));
+
+  function doRegister() {
+    const name = $('reg-name').value.trim();
+    const pin  = $('reg-pin').value.trim();
+    const pin2 = $('reg-pin2').value.trim();
+    const err  = $('reg-error');
+    err.classList.add('hidden');
+    if (!name) return showErr(err, 'Choose a name');
+    if (!/^\d{4}$/.test(pin)) return showErr(err, 'PIN must be exactly 4 digits');
+    if (pin !== pin2) return showErr(err, 'PINs do not match');
+
+    $('register-btn').disabled = true;
+    socket.emit(EVENTS.REGISTER, { name, pin }, (res) => {
+      $('register-btn').disabled = false;
+      if (!res.ok) return showErr(err, res.error);
+      // Show recovery code before entering game
+      showRecoveryModal(res.recoveryCode, res.island.name, () => enterGame(res));
+    });
+  }
+}
+
+function showErr(el, msg) {
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function showRecoveryModal(code, islandName, onDismiss) {
+  $('recovery-code-display').textContent = code;
+  $('recovery-island-name').textContent  = islandName;
+  $('recovery-modal').classList.remove('hidden');
+  window._onRecoveryDismiss = onDismiss;
+}
+
+function dismissRecovery() {
+  $('recovery-modal').classList.add('hidden');
+  if (window._onRecoveryDismiss) window._onRecoveryDismiss();
+}
+window.dismissRecovery = dismissRecovery;
+
+function enterGame(res) {
+  myIsland   = res.island;
+  worldState = res.world;
+  window._currentIsland = myIsland;
+  $('login-screen').classList.add('hidden');
+  $('game-screen').classList.remove('hidden');
+  renderAll();
+  setupMapEvents();
+  toast(res.rejoined ? `Welcome back, ${myIsland.playerName}! 🏝️` : `Your island is born! 🏝️`);
 }
 
 // ── Map canvas events ────────────────────────────────────────────────────────

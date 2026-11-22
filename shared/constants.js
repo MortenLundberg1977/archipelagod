@@ -73,18 +73,18 @@ const HAPPINESS_DECAY      = 0.5;
 const TICK_INTERVAL_MS     = 5000;
 
 const EVENTS = {
-  CONNECT:         'connect',
-  DISCONNECT:      'disconnect',
-  JOIN_GAME:       'join_game',
-  GAME_STATE:      'game_state',
-  ISLAND_UPDATE:   'island_update',
-  WORLD_UPDATE:    'world_update',
-  PLACE_UNIT:      'place_unit',   // new: place a unit on the map
-  TRADE_OFFER:     'trade_offer',
-  TRADE_ACCEPT:    'trade_accept',
-  TRADE_REJECT:    'trade_reject',
-  CHAT:            'chat',
-  ERROR:           'error',
+  CONNECT:       'connect',
+  DISCONNECT:    'disconnect',
+  REGISTER:      'register',       // new player: name + pin → island + recovery code
+  LOGIN:         'login',          // returning player: name + pin
+  ISLAND_UPDATE: 'island_update',
+  WORLD_UPDATE:  'world_update',
+  PLACE_UNIT:    'place_unit',
+  TRADE_OFFER:   'trade_offer',
+  TRADE_ACCEPT:  'trade_accept',
+  TRADE_REJECT:  'trade_reject',
+  CHAT:          'chat',
+  ERROR:         'error',
 };
 
 // Works in both Node.js and browser
