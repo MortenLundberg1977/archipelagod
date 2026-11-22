@@ -116,9 +116,18 @@ function enterGame(res) {
   window._currentIsland = myIsland;
   $('login-screen').classList.add('hidden');
   $('game-screen').classList.remove('hidden');
+  injectRotateHint();
   renderAll();
   setupMapEvents();
   toast(res.rejoined ? `Welcome back, ${myIsland.playerName}! 🏝️` : `Your island is born! 🏝️`);
+}
+
+function injectRotateHint() {
+  if ($('rotate-hint')) return;
+  const div = document.createElement('div');
+  div.id = 'rotate-hint';
+  div.innerHTML = '<span>↺</span><p>Rotate your phone to landscape for the best experience</p>';
+  document.body.appendChild(div);
 }
 
 // ── Map canvas events ────────────────────────────────────────────────────────
@@ -168,14 +177,27 @@ function renderAll() {
 function renderHUD() {
   if (!myIsland) return;
   $('island-name').textContent = `🏝️ ${myIsland.name}`;
-  $('hud-pop').textContent    = `👥 ${myIsland.population}/${myIsland.maxPopulation}`;
   const h = myIsland.happiness;
-  $('hud-happy').textContent  = `${happinessEmoji(h)} ${h}%`;
-  $('hud-happy').className    = happinessClass(h);
-  $('hud-food').textContent   = `🌾 ${Math.floor(myIsland.resources.food)}`;
-  $('hud-ore').textContent    = `⛏️ ${Math.floor(myIsland.resources.ore)}`;
-  $('hud-timber').textContent = `🪵 ${Math.floor(myIsland.resources.timber)}`;
-  $('hud-fish').textContent   = `🐟 ${Math.floor(myIsland.resources.fish)}`;
+  const hudPop   = $('hud-pop');   if (hudPop)    hudPop.querySelector('.hud-val').textContent   = `${myIsland.population}/${myIsland.maxPopulation}`;
+  const hudHappy = $('hud-happy'); if (hudHappy) { hudHappy.querySelector('.hud-val').textContent = `${h}%`; hudHappy.className = happinessClass(h); }
+  const hudFood  = $('hud-food');  if (hudFood)   hudFood.querySelector('.hud-val').textContent   = Math.floor(myIsland.resources.food);
+  const hudOre   = $('hud-ore');   if (hudOre)    hudOre.querySelector('.hud-val').textContent    = Math.floor(myIsland.resources.ore);
+  const hudTim   = $('hud-timber');if (hudTim)    hudTim.querySelector('.hud-val').textContent    = Math.floor(myIsland.resources.timber);
+  const hudFish  = $('hud-fish');  if (hudFish)   hudFish.querySelector('.hud-val').textContent   = Math.floor(myIsland.resources.fish);
+
+  // Sidebar status panel
+  const r = myIsland.resources;
+  setStatRow('stat-pop',    '👥', 'People', `${myIsland.population}/${myIsland.maxPopulation}`);
+  setStatRow('stat-happy',  happinessEmoji(h), 'Happy', `${h}%`, happinessClass(h));
+  setStatRow('stat-food',   '🌾', 'Food',   Math.floor(r.food));
+  setStatRow('stat-timber', '🪵', 'Timber', Math.floor(r.timber));
+  setStatRow('stat-ore',    '⛏️', 'Ore',    Math.floor(r.ore));
+  setStatRow('stat-fish',   '🐟', 'Fish',   Math.floor(r.fish));
+}
+
+function setStatRow(id, emoji, label, val, extraClass) {
+  const el = $(id); if (!el) return;
+  el.innerHTML = `<span class="stat-label">${emoji} ${label}</span><span class="stat-val${extraClass ? ' '+extraClass : ''}">${val}</span>`;
 }
 
 function renderMyIsland() {
@@ -183,36 +205,33 @@ function renderMyIsland() {
   const typeInfo = ISLAND_TYPES[myIsland.type];
   $('island-type-badge').textContent = `${typeInfo.emoji} ${typeInfo.name}`;
 
-  // Pixel art map (preserve scroll position if already set)
+  // Pixel art map
   const canvas = $('island-map');
   if (canvas && window.renderIslandMap) {
     window.renderIslandMap(canvas, myIsland, canvas._viewX, canvas._viewY);
-    // Mini-map overview
-    const miniSrc = window.renderMiniMap?.(canvas, myIsland);
-    const miniDst = $('mini-map');
-    if (miniSrc && miniDst) {
-      const mctx = miniDst.getContext('2d');
-      mctx.drawImage(miniSrc, 0, 0, miniDst.width, miniDst.height);
-      // Draw viewport rect on mini-map
-      const vx = canvas._viewX || 0, vy = canvas._viewY || 0;
-      const vw = window.VIEW_W || 32, vh = window.VIEW_H || 24;
-      const mw = miniDst.width, mh = miniDst.height;
-      mctx.strokeStyle = '#ffffffaa';
-      mctx.lineWidth = 1;
-      mctx.strokeRect(vx * mw / 128, vy * mh / 128, vw * mw / 128, vh * mh / 128);
-    }
+    renderMiniMapOverlay(canvas);
   }
 
-  // Units-on-island summary
   renderUnitList();
+  renderBuilderBar();
 
-  // Build / place panel
-  renderPlacePanel();
+  if (myIsland.hasMarket) $('new-trade').classList.remove('hidden');
+}
 
-  // Trade button
-  if (myIsland.hasMarket) {
-    $('new-trade').classList.remove('hidden');
-  }
+function renderMiniMapOverlay(canvas) {
+  const miniSrc = window.renderMiniMap?.(canvas, myIsland);
+  const miniDst = $('mini-map');
+  if (!miniSrc || !miniDst) return;
+  // miniDst is 128×64 CSS — draw full 128×128 source scaled into it
+  const mctx = miniDst.getContext('2d');
+  mctx.drawImage(miniSrc, 0, 0, miniDst.width, miniDst.height);
+  // Viewport rect
+  const vx = canvas._viewX || 0, vy = canvas._viewY || 0;
+  const vw = window.VIEW_W || 32, vh = window.VIEW_H || 24;
+  const mw = miniDst.width, mh = miniDst.height;
+  mctx.strokeStyle = 'rgba(255,255,255,0.8)';
+  mctx.lineWidth = 1;
+  mctx.strokeRect(vx * mw / 128, vy * mh / 128, vw * mw / 128, vh * mh / 128);
 }
 
 function renderUnitList() {
@@ -235,20 +254,54 @@ function renderUnitList() {
   }
 }
 
-function renderPlacePanel() {
-  const bb = $('place-buttons');
-  bb.innerHTML = '';
+let _builderBarBuilt = false;
+
+function renderBuilderBar() {
+  // Build once; don't re-render on every tick
+  if (_builderBarBuilt) return;
+  _builderBarBuilt = true;
+
+  const bar = $('builder-bar');
+  if (!bar) return;
+  bar.innerHTML = '';
+
+  const tooltip = $('builder-tooltip');
+  let _tooltipTimer = null;
+
+  function showTooltip(spec, type) {
+    if (!tooltip) return;
+    const costStr = Object.entries(spec.cost)
+      .map(([r, v]) => `${v} ${RESOURCE_EMOJI[r] || r}`).join(' · ') || 'free';
+    tooltip.innerHTML =
+      `<strong>${spec.emoji} ${spec.name}</strong><br>${costStr}<br><small style="color:var(--muted)">${getUnitTooltip(type, spec)}</small>`;
+    tooltip.classList.remove('hidden');
+    clearTimeout(_tooltipTimer);
+    _tooltipTimer = setTimeout(() => tooltip.classList.add('hidden'), 2500);
+  }
 
   for (const [type, spec] of Object.entries(UNITS)) {
     const btn = document.createElement('button');
-    btn.className = 'build-btn';
+    btn.className = 'build-icon-btn';
     const costStr = Object.entries(spec.cost)
-      .map(([r, v]) => `${v} ${RESOURCE_EMOJI[r] || r}`)
-      .join(' ');
-    btn.innerHTML = `${spec.emoji} <strong>${spec.name}</strong><br><small>${costStr || 'free'}</small>`;
-    btn.title = getUnitTooltip(type, spec);
-    btn.addEventListener('click', () => startPlacement(type));
-    bb.appendChild(btn);
+      .map(([r, v]) => `${v}${RESOURCE_EMOJI[r] || r}`).join(' ') || 'free';
+    btn.innerHTML =
+      `<span class="btn-emoji">${spec.emoji}</span>` +
+      `<span class="btn-name">${spec.name}</span>` +
+      `<span class="btn-cost">${costStr}</span>`;
+
+    // Desktop: hover shows tooltip
+    btn.addEventListener('mouseenter', () => showTooltip(spec, type));
+    btn.addEventListener('mouseleave', () => {
+      _tooltipTimer = setTimeout(() => tooltip?.classList.add('hidden'), 400);
+    });
+
+    // Both: tap/click starts placement (tooltip shows briefly then placement begins)
+    btn.addEventListener('click', () => {
+      showTooltip(spec, type);
+      setTimeout(() => startPlacement(type), 150);
+    });
+
+    bar.appendChild(btn);
   }
 }
 
@@ -260,10 +313,10 @@ function getUnitTooltip(type, spec) {
   if (eff.timber)        lines.push(`+${eff.timber} timber/tick`);
   if (eff.fish)          lines.push(`+${eff.fish} fish/tick`);
   if (eff.happiness)     lines.push(`+${eff.happiness} happiness/tick`);
-  if (eff.maxPopulation) lines.push(`+${eff.maxPopulation} population cap`);
+  if (eff.maxPopulation) lines.push(`+${eff.maxPopulation} pop cap`);
   if (eff.enablesTrade)  lines.push('enables trading');
-  if (spec.upkeep.food)  lines.push(`costs ${spec.upkeep.food} food/tick`);
-  return lines.join(', ') || spec.name;
+  if (spec.upkeep?.food) lines.push(`−${spec.upkeep.food} food/tick`);
+  return lines.join(' · ') || '';
 }
 
 function startPlacement(unitType) {

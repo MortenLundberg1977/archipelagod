@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Archipelagod 🏝️</title>
   <link rel="stylesheet" href="src/style.css">
 </head>
@@ -14,13 +14,11 @@
       <h1>🏝️ Archipelagod</h1>
       <p>Build your island. Grow your people. Trade with the world.</p>
 
-      <!-- Tab switcher -->
       <div class="auth-tabs">
         <button id="tab-login"    class="tab-btn active">Return to island</button>
         <button id="tab-register" class="tab-btn">New island</button>
       </div>
 
-      <!-- Login panel -->
       <div id="panel-login">
         <input id="login-name" type="text"     placeholder="Your name"   maxlength="20" autocomplete="username">
         <input id="login-pin"  type="password" placeholder="4-digit PIN" maxlength="4"
@@ -29,7 +27,6 @@
         <div id="login-error" class="auth-error hidden"></div>
       </div>
 
-      <!-- Register panel -->
       <div id="panel-register" class="hidden">
         <input id="reg-name"  type="text"     placeholder="Choose a name" maxlength="20" autocomplete="username">
         <input id="reg-pin"   type="password" placeholder="Choose a 4-digit PIN" maxlength="4"
@@ -42,7 +39,7 @@
     </div>
   </div>
 
-  <!-- ── Recovery code modal (shown once after registration) ───────────── -->
+  <!-- ── Recovery code modal ───────────────────────────────────────────── -->
   <div id="recovery-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <h2>🗺️ Island Passport</h2>
@@ -55,83 +52,105 @@
 
   <!-- ── Game screen ────────────────────────────────────────────────────── -->
   <div id="game-screen" class="hidden">
+
+    <!-- Thin top bar: island name + resources -->
     <header>
-      <h2 id="island-name">🏝️</h2>
+      <span id="island-name">🏝️</span>
+      <span id="island-type-badge"></span>
       <div id="hud">
-        <span id="hud-pop">👥 0</span>
-        <span id="hud-happy">😊 0%</span>
-        <span id="hud-food">🌾 0</span>
-        <span id="hud-ore">⛏️ 0</span>
-        <span id="hud-timber">🪵 0</span>
-        <span id="hud-fish">🐟 0</span>
+        <span id="hud-pop"   title="Population">👥 <span class="hud-val">0</span></span>
+        <span id="hud-happy" title="Happiness">😊 <span class="hud-val">0%</span></span>
+        <span id="hud-food"  title="Food">🌾 <span class="hud-val">0</span></span>
+        <span id="hud-ore"   title="Ore">⛏️ <span class="hud-val">0</span></span>
+        <span id="hud-timber"title="Timber">🪵 <span class="hud-val">0</span></span>
+        <span id="hud-fish"  title="Fish">🐟 <span class="hud-val">0</span></span>
       </div>
     </header>
 
-    <main>
-      <section id="my-island">
-        <h3>My Island <span id="island-type-badge"></span></h3>
+    <!-- ── Main game area: landscape split ── -->
+    <div id="game-body">
 
+      <!-- Left: map + builder bar -->
+      <div id="map-col">
         <div id="map-container">
-          <!-- Drag to pan · Pinch or scroll to zoom -->
           <canvas id="island-map"></canvas>
-          <!-- Mini overview map -->
-          <canvas id="mini-map" width="128" height="128" title="Island overview"></canvas>
         </div>
 
+        <!-- Placement hint (shown when in placement mode) -->
+        <div id="placement-hint" class="hidden"></div>
+
+        <!-- Builder toolbar: icon grid below the map -->
+        <div id="builder-bar">
+          <!-- buttons injected by game.js -->
+        </div>
+      </div>
+
+      <!-- Right sidebar: minimap + status + world -->
+      <div id="sidebar">
+
+        <!-- Minimap + quick stats -->
+        <div id="sidebar-map-panel">
+          <canvas id="mini-map" width="128" height="128" title="Island overview"></canvas>
+          <div id="pop-status">
+            <div class="stat-row" id="stat-pop"></div>
+            <div class="stat-row" id="stat-happy"></div>
+            <div class="stat-row" id="stat-food"></div>
+            <div class="stat-row" id="stat-timber"></div>
+            <div class="stat-row" id="stat-ore"></div>
+            <div class="stat-row" id="stat-fish"></div>
+          </div>
+        </div>
+
+        <!-- Units on island -->
         <div id="units-panel">
-          <h4>On your island</h4>
+          <div class="side-heading">On island</div>
           <div id="units-list"></div>
         </div>
 
-        <div id="placement-hint" class="hidden"></div>
-
-        <div id="place-panel">
-          <h4>Place a unit — tap button then tap the map</h4>
-          <div id="place-buttons"></div>
+        <!-- World / neighbours -->
+        <div id="world-panel">
+          <div class="side-heading">🌍 World</div>
+          <div id="islands-list"></div>
         </div>
-      </section>
 
-      <section id="world-panel">
-        <h3>🌍 World</h3>
-        <div id="islands-list"></div>
-      </section>
-
-      <section id="trade-panel">
-        <h3>🤝 Trade</h3>
-        <div id="trade-offers-list"><em>No active trade offers</em></div>
-        <div id="new-trade" class="hidden">
-          <h4>Make an offer</h4>
-          <div class="trade-form">
-            <label>Offer: <input type="number" id="offer-amount" min="1" value="10">
-              <select id="offer-resource">
-                <option value="food">🌾 Food</option>
-                <option value="ore">⛏️ Ore</option>
-                <option value="timber">🪵 Timber</option>
-                <option value="fish">🐟 Fish</option>
-              </select>
-            </label>
-            <label>Want: <input type="number" id="want-amount" min="1" value="10">
-              <select id="want-resource">
-                <option value="ore">⛏️ Ore</option>
-                <option value="food">🌾 Food</option>
-                <option value="timber">🪵 Timber</option>
-                <option value="fish">🐟 Fish</option>
-              </select>
-            </label>
-            <button id="post-trade-btn">Post Offer</button>
+        <!-- Trade -->
+        <div id="trade-panel">
+          <div class="side-heading">🤝 Trade</div>
+          <div id="trade-offers-list"><em>No active offers</em></div>
+          <div id="new-trade" class="hidden">
+            <div class="trade-form">
+              <label>Offer <input type="number" id="offer-amount" min="1" value="10" style="width:48px">
+                <select id="offer-resource">
+                  <option value="food">🌾</option><option value="ore">⛏️</option>
+                  <option value="timber">🪵</option><option value="fish">🐟</option>
+                </select>
+              </label>
+              <label>Want <input type="number" id="want-amount" min="1" value="10" style="width:48px">
+                <select id="want-resource">
+                  <option value="ore">⛏️</option><option value="food">🌾</option>
+                  <option value="timber">🪵</option><option value="fish">🐟</option>
+                </select>
+              </label>
+              <button id="post-trade-btn">Post Offer</button>
+            </div>
           </div>
         </div>
-      </section>
 
-      <section id="chat-panel">
-        <h3>💬 Chat</h3>
-        <div id="chat-log"></div>
-        <div class="chat-input-row">
-          <input id="chat-input" type="text" placeholder="Say something…" maxlength="200">
-          <button id="chat-send-btn">Send</button>
+        <!-- Chat -->
+        <div id="chat-panel">
+          <div class="side-heading">💬 Chat</div>
+          <div id="chat-log"></div>
+          <div class="chat-input-row">
+            <input id="chat-input" type="text" placeholder="Say something…" maxlength="200">
+            <button id="chat-send-btn">➤</button>
+          </div>
         </div>
-      </section>
-    </main>
+
+      </div><!-- /sidebar -->
+    </div><!-- /game-body -->
+
+    <!-- Builder tooltip (follows cursor / appears on tap) -->
+    <div id="builder-tooltip" class="hidden"></div>
 
     <div id="toast"></div>
   </div>
