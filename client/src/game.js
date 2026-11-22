@@ -124,54 +124,30 @@ function enterGame(res) {
 // ── Map canvas events ────────────────────────────────────────────────────────
 function setupMapEvents() {
   const canvas = $('island-map');
-  canvas.addEventListener('click',     e => window.handleCanvasClick(canvas, myIsland, e));
-  canvas.addEventListener('mousemove', e => window.handleCanvasHover(canvas, myIsland, e));
-  canvas.addEventListener('mouseleave',() => {
+
+  // Desktop: click = placement, hover = ghost preview
+  canvas.addEventListener('click',      e => window.handleCanvasClick(canvas, myIsland, e));
+  canvas.addEventListener('mousemove',  e => window.handleCanvasHover(canvas, myIsland, e));
+  canvas.addEventListener('mouseleave', () => {
     if (myIsland) window.renderIslandMap(canvas, myIsland, canvas._viewX, canvas._viewY);
   });
-  // Touch: single-finger tap → placement or unit inspect
-  // (2-finger pinch is handled inside setupZoom; we ignore multi-touch here)
-  let _tapStart = null;
-  canvas.addEventListener('touchstart', e => {
-    if (e.touches.length !== 1) { _tapStart = null; return; }
-    _tapStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
-  }, { passive: true });
 
-  canvas.addEventListener('touchend', e => {
-    if (!_tapStart || e.changedTouches.length !== 1) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - _tapStart.x, dy = t.clientY - _tapStart.y;
-    const dt = Date.now() - _tapStart.t;
-    _tapStart = null;
-    // Only treat as tap if finger barely moved and lifted quickly
-    if (Math.hypot(dx, dy) > 12 || dt > 400) return;
-
-    if (window._placementType) {
-      // In placement mode: dispatch a click to place
-      const mouseEvent = new MouseEvent('click', { clientX: t.clientX, clientY: t.clientY, bubbles: true });
-      canvas.dispatchEvent(mouseEvent);
-    } else {
-      // Not in placement mode: tap → inspect unit if one is there
-      const unit = window.unitAtCanvasPoint?.(canvas, myIsland, t.clientX, t.clientY);
-      if (unit) showUnitInfo(unit);
-    }
-  }, { passive: true });
-
-  // Scroll arrow buttons
-  $('scroll-up')   ?.addEventListener('click', () => reScroll(0, -4));
-  $('scroll-down') ?.addEventListener('click', () => reScroll(0,  4));
-  $('scroll-left') ?.addEventListener('click', () => reScroll(-4, 0));
-  $('scroll-right')?.addEventListener('click', () => reScroll(4,  0));
-
-  // Keyboard scroll
+  // Keyboard pan (desktop convenience)
   document.addEventListener('keydown', e => {
     if (!myIsland) return;
     const moves = { ArrowUp:[0,-4], ArrowDown:[0,4], ArrowLeft:[-4,0], ArrowRight:[4,0] };
     if (moves[e.key]) { e.preventDefault(); reScroll(...moves[e.key]); }
   });
 
-  // Zoom (mouse wheel + pinch)
-  if (window.setupZoom) window.setupZoom(canvas, { get id() { return myIsland?.id; }, get type() { return myIsland?.type; } });
+  // Google Maps-style: drag to pan, pinch to zoom, tap to inspect/place
+  // All touch + wheel handling lives in setupZoom
+  if (window.setupZoom) {
+    const islandProxy = { get id() { return myIsland?.id; }, get type() { return myIsland?.type; } };
+    window.setupZoom(canvas, islandProxy);
+  }
+
+  // Tap-to-inspect callback (called by setupZoom on clean tap when not placing)
+  window._onUnitTap = showUnitInfo;
 }
 
 function reScroll(dx, dy) {
@@ -179,6 +155,7 @@ function reScroll(dx, dy) {
   if (!canvas || !myIsland) return;
   window.scrollView(canvas, myIsland, dx, dy);
 }
+// keyboard still uses reScroll above
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderAll() {

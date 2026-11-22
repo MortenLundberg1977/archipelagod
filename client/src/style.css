@@ -170,46 +170,19 @@ section h4 { color: var(--muted); margin: 0.75rem 0 0.4rem; font-size: 12px; tex
   align-items: flex-start;
   gap: 0.5rem;
 }
-#map-scroll-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-#map-scroll-top, #map-scroll-bot {
-  display: flex; justify-content: center;
-}
-#map-scroll-mid {
-  display: flex; align-items: center; gap: 2px; width: 100%;
-}
-#map-canvas-wrap {
-  flex: 1;
-  border: 2px solid var(--border);
-  line-height: 0;
-  overflow: hidden;
-}
 #island-map {
   display: block;
   width: 100%;
   height: auto;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-}
-/* Scroll arrow buttons */
-.scroll-btn {
-  background: var(--panel);
   border: 2px solid var(--border);
-  color: var(--accent);
-  font-size: 16px;
-  padding: 0.2rem 0.5rem;
-  cursor: pointer;
-  min-width: 32px;
-  min-height: 32px;
-  line-height: 1;
+  touch-action: none;   /* let JS handle all touch gestures */
+  cursor: grab;
+  flex: 1;
+  min-width: 0;
 }
-.scroll-btn:hover { background: var(--border); }
+#island-map:active { cursor: grabbing; }
 
 /* Mini overview map */
 #mini-map {
@@ -221,7 +194,6 @@ section h4 { color: var(--muted); margin: 0.75rem 0 0.4rem; font-size: 12px; tex
   flex-shrink: 0;
   display: block;
   align-self: flex-start;
-  margin-top: 34px; /* align with canvas area */
   opacity: 0.85;
 }
 /* Canvas in placement mode gets a glowing border */

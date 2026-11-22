@@ -596,30 +596,134 @@ function setZoom(canvas, island, level) {
   renderIslandMap(canvas, island, vx, vy);
 }
 
+// ── Google Maps-style navigation ──────────────────────────────────────────────
+// Mouse wheel = zoom. Mouse drag = pan. Touch: 1-finger drag = pan, pinch = zoom.
+// Tap (finger barely moved, quick lift) = placement or unit inspect.
 function setupZoom(canvas, island) {
-  // Mouse wheel zoom
+  // ── Mouse wheel zoom (centred on cursor) ──────────────────────────────────
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     setZoom(canvas, island, _zoomLevel + (e.deltaY < 0 ? 1 : -1));
   }, { passive: false });
 
-  // Pinch-to-zoom
-  let _lastDist = null;
-  canvas.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) _lastDist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY);
-  }, { passive: true });
-  canvas.addEventListener('touchmove', (e) => {
-    if (e.touches.length !== 2 || _lastDist === null) return;
+  // ── Mouse drag pan ────────────────────────────────────────────────────────
+  let _drag = null;   // { startX, startY, startVX, startVY }
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    _drag = { x: e.clientX, y: e.clientY, vx: canvas._viewX || 0, vy: canvas._viewY || 0 };
+    canvas.style.cursor = 'grabbing';
     e.preventDefault();
-    const dist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY);
-    if (dist > _lastDist + 20)      { setZoom(canvas, island, _zoomLevel + 1); _lastDist = dist; }
-    else if (dist < _lastDist - 20) { setZoom(canvas, island, _zoomLevel - 1); _lastDist = dist; }
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!_drag) return;
+    const vw = window.VIEW_W || VIEW_W, vh = window.VIEW_H || VIEW_H;
+    const rect = canvas.getBoundingClientRect();
+    const scale = vw / rect.width;           // tiles per css-pixel
+    const dtx = Math.round((e.clientX - _drag.x) * scale);
+    const dty = Math.round((e.clientY - _drag.y) * scale);
+    if (dtx !== 0 || dty !== 0) {
+      window.scrollView(canvas, island, -dtx, -dty);
+      _drag.x += dtx / scale;
+      _drag.y += dty / scale;
+    }
+  });
+  window.addEventListener('mouseup', () => {
+    _drag = null;
+    canvas.style.cursor = _placementType ? 'crosshair' : 'grab';
+  });
+
+  // Show grab cursor when not in placement mode
+  canvas.style.cursor = 'grab';
+
+  // ── Touch: unified handler ────────────────────────────────────────────────
+  // State
+  let _t1 = null;          // { id, x, y, t } – primary touch
+  let _t2 = null;          // { id, x, y } – secondary touch (pinch)
+  let _pinchDist = null;
+  let _hasDragged = false;
+
+  function touchById(list, id) {
+    for (const t of list) if (t.identifier === id) return t;
+    return null;
+  }
+
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+
+    if (e.touches.length === 1 && _t1 === null) {
+      const t = e.touches[0];
+      _t1 = { id: t.identifier, x: t.clientX, y: t.clientY,
+               vx: canvas._viewX || 0, vy: canvas._viewY || 0,
+               ox: t.clientX, oy: t.clientY, t: Date.now() };
+      _hasDragged = false;
+    }
+
+    if (e.touches.length === 2) {
+      const a = e.touches[0], b = e.touches[1];
+      _t2 = { id: b.identifier };
+      _pinchDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      _hasDragged = true;  // pinch is not a tap
+    }
   }, { passive: false });
-  canvas.addEventListener('touchend', () => { _lastDist = null; });
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+
+    // ── Pinch zoom ──
+    if (e.touches.length === 2 && _pinchDist !== null) {
+      const a = e.touches[0], b = e.touches[1];
+      const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      if (dist > _pinchDist + 18)      { setZoom(canvas, island, _zoomLevel + 1); _pinchDist = dist; }
+      else if (dist < _pinchDist - 18) { setZoom(canvas, island, _zoomLevel - 1); _pinchDist = dist; }
+      return;
+    }
+
+    // ── 1-finger pan ──
+    if (e.touches.length === 1 && _t1 !== null) {
+      const cur = touchById(e.touches, _t1.id) || e.touches[0];
+      const vw = window.VIEW_W || VIEW_W;
+      const rect = canvas.getBoundingClientRect();
+      const scale = vw / rect.width;
+      const dtx = Math.round((cur.clientX - _t1.x) * scale);
+      const dty = Math.round((cur.clientY - _t1.y) * scale);
+      if (Math.abs(dtx) > 0 || Math.abs(dty) > 0) {
+        _hasDragged = true;
+        window.scrollView(canvas, island, -dtx, -dty);
+        _t1.x += dtx / scale;
+        _t1.y += dty / scale;
+      }
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    // If the primary touch lifted
+    if (_t1 !== null) {
+      const lifted = touchById(e.changedTouches, _t1.id);
+      if (lifted) {
+        const dt = Date.now() - _t1.t;
+        const dist = Math.hypot(lifted.clientX - _t1.ox, lifted.clientY - _t1.oy);
+        const wasTap = !_hasDragged && dist < 12 && dt < 400;
+        const cx = lifted.clientX, cy = lifted.clientY;
+        _t1 = null;
+
+        if (wasTap) {
+          if (_placementType) {
+            // Fire a synthetic click for placement
+            const me = new MouseEvent('click', { clientX: cx, clientY: cy, bubbles: true });
+            canvas.dispatchEvent(me);
+          } else {
+            // Inspect unit
+            const unit = unitAtCanvasPoint(canvas, window._currentIsland, cx, cy);
+            if (unit && window._onUnitTap) window._onUnitTap(unit);
+          }
+        }
+      }
+    }
+
+    // Reset pinch when second finger lifts
+    if (e.touches.length < 2) { _t2 = null; _pinchDist = null; }
+    if (e.touches.length === 0) { _hasDragged = false; }
+  }, { passive: true });
 }
 
 // ── Tap-to-inspect (mobile) ───────────────────────────────────────────────────

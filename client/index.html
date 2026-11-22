@@ -72,22 +72,8 @@
         <h3>My Island <span id="island-type-badge"></span></h3>
 
         <div id="map-container">
-          <!-- Scroll controls -->
-          <div id="map-scroll-wrap">
-            <div id="map-scroll-top">
-              <button id="scroll-up" class="scroll-btn" title="Scroll up">▲</button>
-            </div>
-            <div id="map-scroll-mid">
-              <button id="scroll-left"  class="scroll-btn" title="Scroll left">◀</button>
-              <div id="map-canvas-wrap">
-                <canvas id="island-map"></canvas>
-              </div>
-              <button id="scroll-right" class="scroll-btn" title="Scroll right">▶</button>
-            </div>
-            <div id="map-scroll-bot">
-              <button id="scroll-down" class="scroll-btn" title="Scroll down">▼</button>
-            </div>
-          </div>
+          <!-- Drag to pan · Pinch or scroll to zoom -->
+          <canvas id="island-map"></canvas>
           <!-- Mini overview map -->
           <canvas id="mini-map" width="128" height="128" title="Island overview"></canvas>
         </div>
