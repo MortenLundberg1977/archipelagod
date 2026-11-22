@@ -75,6 +75,12 @@ function renderMyIsland() {
   const typeInfo = ISLAND_TYPES[myIsland.type];
   $('island-type-badge').textContent = `${typeInfo.emoji} ${typeInfo.name}`;
 
+  // Pixel art map
+  const canvas = $('island-map');
+  if (canvas && window.renderIslandMap) {
+    window.renderIslandMap(canvas, myIsland);
+  }
+
   // Buildings list
   const bl = $('buildings-list');
   bl.innerHTML = '';
@@ -227,6 +233,7 @@ function escapeHtml(str) {
 socket.on(EVENTS.ISLAND_UPDATE, (island) => {
   myIsland = island;
   renderHUD();
+  renderMyIsland();
 });
 
 socket.on(EVENTS.WORLD_UPDATE, (world) => {

@@ -90,10 +90,26 @@ section {
   border: 2px solid var(--border);
   padding: 1rem;
   overflow-y: auto;
-  max-height: 45vh;
+  max-height: 60vh;
 }
+#my-island { max-height: none; }
 section h3 { color: var(--accent); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
 section h4 { color: var(--muted); margin: 0.75rem 0 0.4rem; font-size: 12px; text-transform: uppercase; }
+
+/* Island map canvas */
+#map-container {
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  line-height: 0;
+}
+#island-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
 
 /* Buildings */
 #buildings-list, #build-buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; }
