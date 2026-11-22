@@ -177,6 +177,12 @@ function renderAll() {
 function renderHUD() {
   if (!myIsland) return;
   $('island-name').textContent = `🏝️ ${myIsland.name}`;
+  // Sidebar island name
+  const sn = $('sidebar-island-name');
+  if (sn) {
+    const typeInfo = ISLAND_TYPES[myIsland.type] || {};
+    sn.textContent = `${typeInfo.emoji || '🏝️'} ${myIsland.name}`;
+  }
   const h = myIsland.happiness;
   const hudPop   = $('hud-pop');   if (hudPop)    hudPop.querySelector('.hud-val').textContent   = `${myIsland.population}/${myIsland.maxPopulation}`;
   const hudHappy = $('hud-happy'); if (hudHappy) { hudHappy.querySelector('.hud-val').textContent = `${h}%`; hudHappy.className = happinessClass(h); }

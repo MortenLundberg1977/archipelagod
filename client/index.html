@@ -53,19 +53,17 @@
   <!-- ── Game screen ────────────────────────────────────────────────────── -->
   <div id="game-screen" class="hidden">
 
-    <!-- Thin top bar: island name + resources -->
-    <header>
-      <span id="island-name">🏝️</span>
-      <span id="island-type-badge"></span>
-      <div id="hud">
-        <span id="hud-pop"   title="Population">👥 <span class="hud-val">0</span></span>
-        <span id="hud-happy" title="Happiness">😊 <span class="hud-val">0%</span></span>
-        <span id="hud-food"  title="Food">🌾 <span class="hud-val">0</span></span>
-        <span id="hud-ore"   title="Ore">⛏️ <span class="hud-val">0</span></span>
-        <span id="hud-timber"title="Timber">🪵 <span class="hud-val">0</span></span>
-        <span id="hud-fish"  title="Fish">🐟 <span class="hud-val">0</span></span>
-      </div>
-    </header>
+    <!-- island-name / hud kept as hidden elements so game.js can still set them -->
+    <span id="island-name"      style="display:none"></span>
+    <span id="island-type-badge"style="display:none"></span>
+    <div   id="hud"             style="display:none">
+      <span id="hud-pop"   ><span class="hud-val">0</span></span>
+      <span id="hud-happy" ><span class="hud-val">0%</span></span>
+      <span id="hud-food"  ><span class="hud-val">0</span></span>
+      <span id="hud-ore"   ><span class="hud-val">0</span></span>
+      <span id="hud-timber"><span class="hud-val">0</span></span>
+      <span id="hud-fish"  ><span class="hud-val">0</span></span>
+    </div>
 
     <!-- ── Main game area: landscape split ── -->
     <div id="game-body">
@@ -90,6 +88,7 @@
 
         <!-- Minimap + quick stats -->
         <div id="sidebar-map-panel">
+          <div id="sidebar-island-name"></div>
           <canvas id="mini-map" width="128" height="128" title="Island overview"></canvas>
           <div id="pop-status">
             <div class="stat-row" id="stat-pop"></div>

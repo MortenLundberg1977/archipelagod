@@ -100,27 +100,16 @@ button:hover { background: var(--accent); color: var(--bg); }
   overflow: hidden;
 }
 
-/* Thin resource bar at top */
-header {
-  background: var(--panel);
-  border-bottom: 2px solid var(--border);
-  padding: 0.3rem 0.6rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  flex-shrink: 0;
+/* Island name in sidebar */
+#sidebar-island-name {
+  font-size: 11px;
+  color: var(--accent);
+  text-align: center;
+  padding: 3px 2px 2px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-#island-name { color: var(--accent); font-size: 1rem; flex-shrink: 0; }
-#island-type-badge {
-  background: var(--border); padding: 0.1rem 0.4rem;
-  font-size: 11px; flex-shrink: 0;
-}
-#hud { display: flex; gap: 0.6rem; align-items: center; }
-#hud span { font-size: 12px; }
-#hud .hud-val { color: var(--yellow); }
 
 /* ── Game body: landscape split ──────────────────────────────────────────── */
 #game-body {
