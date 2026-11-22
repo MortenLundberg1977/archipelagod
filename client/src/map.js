@@ -496,6 +496,7 @@ let _placementCallback = null;
 function enterPlacementMode(canvas, unitType, onPlace) {
   _placementType     = unitType;
   _placementCallback = onPlace;
+  window._placementType = unitType;   // expose for touch handler in game.js
   canvas.style.cursor = 'crosshair';
   canvas.classList.add('placement-mode');
 }
@@ -503,6 +504,7 @@ function enterPlacementMode(canvas, unitType, onPlace) {
 function exitPlacementMode(canvas) {
   _placementType     = null;
   _placementCallback = null;
+  window._placementType = null;
   canvas.style.cursor = '';
   canvas.classList.remove('placement-mode');
 }
@@ -620,6 +622,20 @@ function setupZoom(canvas, island) {
   canvas.addEventListener('touchend', () => { _lastDist = null; });
 }
 
+// ── Tap-to-inspect (mobile) ───────────────────────────────────────────────────
+// Returns the unit at the tapped canvas position, or null
+function unitAtCanvasPoint(canvas, island, clientX, clientY) {
+  const rect   = canvas.getBoundingClientRect();
+  const vw = window.VIEW_W || VIEW_W, vh = window.VIEW_H || VIEW_H;
+  const scaleX = vw * TILE / rect.width;
+  const scaleY = vh * TILE / rect.height;
+  const vx = Math.floor((clientX - rect.left) * scaleX / TILE);
+  const vy = Math.floor((clientY - rect.top)  * scaleY / TILE);
+  const mx = vx + (canvas._viewX || 0);
+  const my = vy + (canvas._viewY || 0);
+  return (island?.units || []).find(u => u.x === mx && u.y === my) || null;
+}
+
 // ── Exports ───────────────────────────────────────────────────────────────────
 window.renderIslandMap    = renderIslandMap;
 window.renderMiniMap      = renderMiniMap;
@@ -630,6 +646,7 @@ window.enterPlacementMode = enterPlacementMode;
 window.exitPlacementMode  = exitPlacementMode;
 window.handleCanvasClick  = handleCanvasClick;
 window.handleCanvasHover  = handleCanvasHover;
+window.unitAtCanvasPoint  = unitAtCanvasPoint;
 window.MAP_W   = MAP_W;
 window.MAP_H   = MAP_H;
 window.VIEW_W  = VIEW_W;

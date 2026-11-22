@@ -129,13 +129,33 @@ function setupMapEvents() {
   canvas.addEventListener('mouseleave',() => {
     if (myIsland) window.renderIslandMap(canvas, myIsland, canvas._viewX, canvas._viewY);
   });
-  // Touch: tap to place
+  // Touch: single-finger tap → placement or unit inspect
+  // (2-finger pinch is handled inside setupZoom; we ignore multi-touch here)
+  let _tapStart = null;
   canvas.addEventListener('touchstart', e => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const mouseEvent = new MouseEvent('click', { clientX: touch.clientX, clientY: touch.clientY });
-    canvas.dispatchEvent(mouseEvent);
-  }, { passive: false });
+    if (e.touches.length !== 1) { _tapStart = null; return; }
+    _tapStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+  }, { passive: true });
+
+  canvas.addEventListener('touchend', e => {
+    if (!_tapStart || e.changedTouches.length !== 1) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - _tapStart.x, dy = t.clientY - _tapStart.y;
+    const dt = Date.now() - _tapStart.t;
+    _tapStart = null;
+    // Only treat as tap if finger barely moved and lifted quickly
+    if (Math.hypot(dx, dy) > 12 || dt > 400) return;
+
+    if (window._placementType) {
+      // In placement mode: dispatch a click to place
+      const mouseEvent = new MouseEvent('click', { clientX: t.clientX, clientY: t.clientY, bubbles: true });
+      canvas.dispatchEvent(mouseEvent);
+    } else {
+      // Not in placement mode: tap → inspect unit if one is there
+      const unit = window.unitAtCanvasPoint?.(canvas, myIsland, t.clientX, t.clientY);
+      if (unit) showUnitInfo(unit);
+    }
+  }, { passive: true });
 
   // Scroll arrow buttons
   $('scroll-up')   ?.addEventListener('click', () => reScroll(0, -4));
@@ -285,6 +305,23 @@ function startPlacement(unitType) {
     if (hint) hint.classList.add('hidden');
     doPlaceUnit(type, x, y);
   });
+}
+
+// ── Unit info (tap to inspect on mobile) ─────────────────────────────────────
+function showUnitInfo(unit) {
+  const spec = UNITS[unit.type];
+  if (!spec) return;
+  const eff = spec.effect;
+  const lines = [];
+  if (eff.food)          lines.push(`+${eff.food} food/tick`);
+  if (eff.ore)           lines.push(`+${eff.ore} ore/tick`);
+  if (eff.timber)        lines.push(`+${eff.timber} timber/tick`);
+  if (eff.fish)          lines.push(`+${eff.fish} fish/tick`);
+  if (eff.happiness)     lines.push(`+${eff.happiness} happiness/tick`);
+  if (eff.maxPopulation) lines.push(`+${eff.maxPopulation} pop cap`);
+  if (spec.upkeep.food)  lines.push(`−${spec.upkeep.food} food/tick`);
+  const detail = lines.length ? lines.join(' · ') : 'No production';
+  toast(`${spec.emoji} ${spec.name}  ${detail}`, 3500);
 }
 
 // ── Actions ──────────────────────────────────────────────────────────────────
