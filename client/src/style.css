@@ -111,22 +111,53 @@ section h4 { color: var(--muted); margin: 0.75rem 0 0.4rem; font-size: 12px; tex
   image-rendering: crisp-edges;
 }
 
-/* Buildings */
-#buildings-list, #build-buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+/* Units */
+#units-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.4rem; }
 .building-chip {
   background: var(--bg);
   border: 1px solid var(--border);
   padding: 0.2rem 0.5rem;
   font-size: 12px;
 }
+
+/* Place buttons grid */
+#place-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
 .build-btn {
-  font-size: 12px;
-  padding: 0.3rem 0.6rem;
+  font-size: 11px;
+  padding: 0.4rem 0.3rem;
   background: var(--bg);
   border: 1px solid var(--border);
+  text-align: center;
+  line-height: 1.4;
+  cursor: pointer;
 }
 .build-btn:hover { background: var(--border); }
 .build-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Placement hint bar */
+#placement-hint {
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 12px;
+  padding: 0.3rem 0.6rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+
+/* Canvas in placement mode gets a glowing border */
+#island-map.placement-mode {
+  outline: 3px solid var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
 
 /* World islands */
 .island-card {

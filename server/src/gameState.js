@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const { createIsland, tickIsland, buildOnIsland } = require('./island');
+const { createIsland, tickIsland, placeUnit } = require('./island');
 
 // In-memory game state (replace with SQLite for persistence later)
 const islands   = new Map(); // islandId → island
@@ -66,10 +66,10 @@ function getPlayerIsland(socketId) {
   return islands.get(player.islandId) || null;
 }
 
-function handleBuild(socketId, buildingType) {
+function handlePlaceUnit(socketId, { unitType, x, y }) {
   const island = getPlayerIsland(socketId);
   if (!island) return { ok: false, error: 'No island found' };
-  return buildOnIsland(island, buildingType);
+  return placeUnit(island, unitType, x, y);
 }
 
 function handleTradeOffer(socketId, { wantFromIslandId, offerResource, offerAmount, wantResource, wantAmount }) {
@@ -142,6 +142,6 @@ module.exports = {
   islands, players, tradeOffers,
   getPublicIsland, getPrivateIsland, getWorldState,
   joinGame, playerDisconnect, getPlayerIsland,
-  handleBuild, handleTradeOffer, handleTradeAccept,
+  handlePlaceUnit, handleTradeOffer, handleTradeAccept,
   tickAll,
 };

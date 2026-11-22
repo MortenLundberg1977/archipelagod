@@ -1,6 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const { ISLAND_TYPES, RESOURCES, BASE_PRODUCTION, POPULATION_FOOD_COST,
-        HAPPINESS_DECAY, BUILDINGS } = require('../../shared/constants');
+const { ISLAND_TYPES, RESOURCES, UNITS, POPULATION_FOOD_COST, HAPPINESS_DECAY } = require('../../shared/constants');
 
 const ISLAND_TYPE_KEYS = Object.keys(ISLAND_TYPES);
 
@@ -21,20 +20,21 @@ function createIsland(playerId, playerName) {
     resources: { food: 50, ore: 20, timber: 30, fish: 30 },
 
     // Population
-    population: 5,
-    maxPopulation: 10, // grows with houses
-    happiness: 80,     // 0–100
+    population:    5,
+    maxPopulation: 10,
+    happiness:     80,
 
-    // Buildings: { buildingType: count }
-    buildings: {
-      FARM:        1,
-      FISHING_HUT: 1,
-      HOUSE:       2,
-    },
+    // Units placed on the map: [{ id, type, x, y }]
+    // Start with a couple of houses and a farm plot so the island isn't empty
+    units: [
+      { id: uuidv4(), type: 'HOUSE',      x: 12, y: 9  },
+      { id: uuidv4(), type: 'HOUSE',      x: 14, y: 11 },
+      { id: uuidv4(), type: 'FARM_PLOT',  x: 10, y: 10 },
+      { id: uuidv4(), type: 'FISHING_HUT',x: 16, y: 13 },
+    ],
 
     // Trade
     hasMarket: false,
-    tradeOffers: [], // { id, fromIslandId, resource, amount, wantResource, wantAmount }
 
     // Stats
     createdAt: Date.now(),
@@ -46,55 +46,80 @@ function tickIsland(island) {
   island.ticks++;
   const typeBonuses = ISLAND_TYPES[island.type].bonuses;
 
-  // --- Production ---
-  const b = island.buildings;
-  island.resources.food   += (b.FARM        || 0) * BASE_PRODUCTION.food   * typeBonuses.food;
-  island.resources.ore    += (b.MINE        || 0) * BASE_PRODUCTION.ore    * typeBonuses.ore;
-  island.resources.timber += (b.LUMBER_MILL || 0) * BASE_PRODUCTION.timber * typeBonuses.timber;
-  island.resources.fish   += (b.FISHING_HUT || 0) * BASE_PRODUCTION.fish   * typeBonuses.fish;
+  // --- Accumulate effects from all placed units ---
+  let foodProd    = 0;
+  let oreProd     = 0;
+  let timberProd  = 0;
+  let fishProd    = 0;
+  let happBonus   = 0;
+  let maxPopBonus = 0;
+  let foodUpkeep  = 0;
 
-  // --- Consumption ---
-  const foodNeeded = island.population * POPULATION_FOOD_COST;
+  for (const unit of island.units) {
+    const spec = UNITS[unit.type];
+    if (!spec) continue;
+    const e = spec.effect;
+    if (e.food)          foodProd    += e.food;
+    if (e.ore)           oreProd     += e.ore;
+    if (e.timber)        timberProd  += e.timber;
+    if (e.fish)          fishProd    += e.fish;
+    if (e.happiness)     happBonus   += e.happiness;
+    if (e.maxPopulation) maxPopBonus += e.maxPopulation;
+    if (e.enablesTrade)  island.hasMarket = true;
+
+    // upkeep
+    if (spec.upkeep.food) foodUpkeep += spec.upkeep.food;
+  }
+
+  // Apply type bonuses to production
+  island.resources.food   += foodProd   * typeBonuses.food;
+  island.resources.ore    += oreProd    * typeBonuses.ore;
+  island.resources.timber += timberProd * typeBonuses.timber;
+  island.resources.fish   += fishProd   * typeBonuses.fish;
+
+  // Update maxPopulation from houses/villagers
+  island.maxPopulation = 10 + maxPopBonus; // 10 base + unit contributions
+
+  // --- Consumption: population eats food + unit upkeep ---
+  const foodNeeded = (island.population * POPULATION_FOOD_COST) + foodUpkeep;
   if (island.resources.food >= foodNeeded) {
     island.resources.food -= foodNeeded;
     island.happiness = Math.min(100, island.happiness + 2);
   } else {
-    // Not enough food — people are unhappy
     island.resources.food = 0;
     island.happiness = Math.max(0, island.happiness - 10);
   }
 
-  // Happiness drift
+  // Happiness drift + unit bonus
+  island.happiness += happBonus;
   island.happiness = Math.max(0, island.happiness - HAPPINESS_DECAY);
+  island.happiness = Math.min(100, island.happiness);
 
   // --- Population growth ---
-  // Grow if happy and room available
   if (island.happiness > 70 && island.population < island.maxPopulation) {
     if (island.ticks % 6 === 0) island.population++;
   }
-  // Shrink if very unhappy
   if (island.happiness < 20 && island.population > 1) {
     if (island.ticks % 4 === 0) island.population--;
   }
 
-  // Clamp resources (no negatives)
+  // Clamp
   for (const r of RESOURCES) {
     island.resources[r] = Math.max(0, Math.round(island.resources[r] * 10) / 10);
   }
-
   island.happiness = Math.round(island.happiness * 10) / 10;
 
   return island;
 }
 
-function buildOnIsland(island, buildingType) {
-  const spec = BUILDINGS[buildingType];
-  if (!spec) return { ok: false, error: 'Unknown building type' };
+function placeUnit(island, unitType, x, y) {
+  const spec = UNITS[unitType];
+  if (!spec) return { ok: false, error: 'Unknown unit type' };
 
   // Check resources
   for (const [res, cost] of Object.entries(spec.cost)) {
     if ((island.resources[res] || 0) < cost) {
-      return { ok: false, error: `Not enough ${res} (need ${cost}, have ${island.resources[res] || 0})` };
+      return { ok: false, error: `Not enough ${res} (need ${cost}, have ${Math.floor(island.resources[res] || 0)})` };
     }
   }
 
@@ -103,12 +128,11 @@ function buildOnIsland(island, buildingType) {
     island.resources[res] -= cost;
   }
 
-  // Apply effect
-  island.buildings[buildingType] = (island.buildings[buildingType] || 0) + 1;
-  if (buildingType === 'HOUSE')  island.maxPopulation += spec.capacity;
-  if (buildingType === 'MARKET') island.hasMarket = true;
+  // Add unit
+  const unit = { id: uuidv4(), type: unitType, x, y };
+  island.units.push(unit);
 
-  return { ok: true };
+  return { ok: true, unit };
 }
 
-module.exports = { createIsland, tickIsland, buildOnIsland };
+module.exports = { createIsland, tickIsland, placeUnit };

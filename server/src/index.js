@@ -7,7 +7,7 @@ const { EVENTS, TICK_INTERVAL_MS } = require('../../shared/constants');
 const {
   getPrivateIsland, getPublicIsland, getWorldState,
   joinGame, playerDisconnect, getPlayerIsland,
-  handleBuild, handleTradeOffer, handleTradeAccept,
+  handlePlaceUnit, handleTradeOffer, handleTradeAccept,
   tickAll,
 } = require('./gameState');
 
@@ -39,8 +39,8 @@ io.on('connection', (socket) => {
     socket.to('world').emit(EVENTS.WORLD_UPDATE, getWorldState());
   });
 
-  socket.on(EVENTS.BUILD, ({ buildingType }, cb) => {
-    const result = handleBuild(socket.id, buildingType);
+  socket.on(EVENTS.PLACE_UNIT, ({ unitType, x, y }, cb) => {
+    const result = handlePlaceUnit(socket.id, { unitType, x, y });
     if (result.ok) {
       const island = getPlayerIsland(socket.id);
       cb?.({ ok: true, island: getPrivateIsland(island) });
