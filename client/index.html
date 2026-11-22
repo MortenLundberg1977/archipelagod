@@ -46,7 +46,7 @@
   <div id="recovery-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <h2>🗺️ Island Passport</h2>
-      <p>Write this down or give it to your teacher.<br>You'll need it if you forget your PIN.</p>
+      <p>Write this down or give it to your gamemaster.<br>You'll need it if you forget your PIN.</p>
       <div id="recovery-code-display" class="recovery-code"></div>
       <p class="recovery-name">Island: <strong id="recovery-island-name"></strong></p>
       <button id="recovery-ok-btn" onclick="dismissRecovery()">Got it! Start playing →</button>
@@ -72,7 +72,24 @@
         <h3>My Island <span id="island-type-badge"></span></h3>
 
         <div id="map-container">
-          <canvas id="island-map"></canvas>
+          <!-- Scroll controls -->
+          <div id="map-scroll-wrap">
+            <div id="map-scroll-top">
+              <button id="scroll-up" class="scroll-btn" title="Scroll up">▲</button>
+            </div>
+            <div id="map-scroll-mid">
+              <button id="scroll-left"  class="scroll-btn" title="Scroll left">◀</button>
+              <div id="map-canvas-wrap">
+                <canvas id="island-map"></canvas>
+              </div>
+              <button id="scroll-right" class="scroll-btn" title="Scroll right">▶</button>
+            </div>
+            <div id="map-scroll-bot">
+              <button id="scroll-down" class="scroll-btn" title="Scroll down">▼</button>
+            </div>
+          </div>
+          <!-- Mini overview map -->
+          <canvas id="mini-map" width="128" height="128" title="Island overview"></canvas>
         </div>
 
         <div id="units-panel">

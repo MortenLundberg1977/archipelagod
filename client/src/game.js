@@ -126,14 +126,38 @@ function setupMapEvents() {
   const canvas = $('island-map');
   canvas.addEventListener('click',     e => window.handleCanvasClick(canvas, myIsland, e));
   canvas.addEventListener('mousemove', e => window.handleCanvasHover(canvas, myIsland, e));
-  canvas.addEventListener('mouseleave',() => { if (myIsland) window.renderIslandMap(canvas, myIsland); });
-  // Touch support
+  canvas.addEventListener('mouseleave',() => {
+    if (myIsland) window.renderIslandMap(canvas, myIsland, canvas._viewX, canvas._viewY);
+  });
+  // Touch: tap to place
   canvas.addEventListener('touchstart', e => {
     e.preventDefault();
     const touch = e.touches[0];
     const mouseEvent = new MouseEvent('click', { clientX: touch.clientX, clientY: touch.clientY });
     canvas.dispatchEvent(mouseEvent);
   }, { passive: false });
+
+  // Scroll arrow buttons
+  $('scroll-up')   ?.addEventListener('click', () => reScroll(0, -4));
+  $('scroll-down') ?.addEventListener('click', () => reScroll(0,  4));
+  $('scroll-left') ?.addEventListener('click', () => reScroll(-4, 0));
+  $('scroll-right')?.addEventListener('click', () => reScroll(4,  0));
+
+  // Keyboard scroll
+  document.addEventListener('keydown', e => {
+    if (!myIsland) return;
+    const moves = { ArrowUp:[0,-4], ArrowDown:[0,4], ArrowLeft:[-4,0], ArrowRight:[4,0] };
+    if (moves[e.key]) { e.preventDefault(); reScroll(...moves[e.key]); }
+  });
+
+  // Zoom (mouse wheel + pinch)
+  if (window.setupZoom) window.setupZoom(canvas, { get id() { return myIsland?.id; }, get type() { return myIsland?.type; } });
+}
+
+function reScroll(dx, dy) {
+  const canvas = $('island-map');
+  if (!canvas || !myIsland) return;
+  window.scrollView(canvas, myIsland, dx, dy);
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
@@ -162,10 +186,24 @@ function renderMyIsland() {
   const typeInfo = ISLAND_TYPES[myIsland.type];
   $('island-type-badge').textContent = `${typeInfo.emoji} ${typeInfo.name}`;
 
-  // Pixel art map
+  // Pixel art map (preserve scroll position if already set)
   const canvas = $('island-map');
   if (canvas && window.renderIslandMap) {
-    window.renderIslandMap(canvas, myIsland);
+    window.renderIslandMap(canvas, myIsland, canvas._viewX, canvas._viewY);
+    // Mini-map overview
+    const miniSrc = window.renderMiniMap?.(canvas, myIsland);
+    const miniDst = $('mini-map');
+    if (miniSrc && miniDst) {
+      const mctx = miniDst.getContext('2d');
+      mctx.drawImage(miniSrc, 0, 0, miniDst.width, miniDst.height);
+      // Draw viewport rect on mini-map
+      const vx = canvas._viewX || 0, vy = canvas._viewY || 0;
+      const vw = window.VIEW_W || 32, vh = window.VIEW_H || 24;
+      const mw = miniDst.width, mh = miniDst.height;
+      mctx.strokeStyle = '#ffffffaa';
+      mctx.lineWidth = 1;
+      mctx.strokeRect(vx * mw / 128, vy * mh / 128, vw * mw / 128, vh * mh / 128);
+    }
   }
 
   // Units-on-island summary
@@ -261,7 +299,8 @@ function doPlaceUnit(unitType, x, y) {
     } else {
       toast(`❌ ${res.error}`);
       // Redraw clean map
-      window.renderIslandMap($('island-map'), myIsland);
+      const _c2 = $('island-map');
+      window.renderIslandMap(_c2, myIsland, _c2?._viewX, _c2?._viewY);
     }
   });
 }
@@ -372,7 +411,8 @@ socket.on(EVENTS.ISLAND_UPDATE, (island) => {
   window._currentIsland = myIsland;
   renderHUD();
   renderUnitList();
-  window.renderIslandMap?.($('island-map'), myIsland);
+  const _c = $('island-map');
+  window.renderIslandMap?.(_c, myIsland, _c?._viewX, _c?._viewY);
 });
 
 socket.on(EVENTS.WORLD_UPDATE, (world) => {

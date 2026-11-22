@@ -103,6 +103,39 @@ function tickIsland(island) {
     if (island.ticks % 4 === 0) island.population--;
   }
 
+  // --- Animal & villager reproduction ---
+  // Every ~30 ticks, check each reproducible type. If ≥2 exist, spawn one more.
+  if (island.ticks % 30 === 0) {
+    for (const species of ['VILLAGER', 'PIG', 'COW']) {
+      const existing = island.units.filter(u => u.type === species);
+      if (existing.length < 2) continue;
+
+      // Resource check: need a bit of food to support new life
+      const foodNeeded = species === 'COW' ? 10 : species === 'PIG' ? 6 : 5;
+      if (island.resources.food < foodNeeded) continue;
+
+      // Find a spot near one of the existing units (search a small radius)
+      const parent = existing[Math.floor(Math.random() * existing.length)];
+      let placed = false;
+      const offsets = [-2,-1,0,1,2];
+      outer: for (const dx of offsets) {
+        for (const dy of offsets) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = parent.x + dx, ny = parent.y + dy;
+          if (nx < 0 || ny < 0 || nx > 127 || ny > 127) continue;
+          // Make sure no other unit is at that tile
+          if (island.units.some(u => u.x === nx && u.y === ny)) continue;
+          island.units.push({ id: uuidv4(), type: species, x: nx, y: ny });
+          island.resources.food -= foodNeeded;
+          placed = true;
+          break outer;
+        }
+      }
+      // Only one new birth per tick cycle
+      if (placed) break;
+    }
+  }
+
   // Clamp
   for (const r of RESOURCES) {
     island.resources[r] = Math.max(0, Math.round(island.resources[r] * 10) / 10);
