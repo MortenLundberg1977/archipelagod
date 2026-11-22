@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Archipelagod 🏝️</title>
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <!-- Login screen -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h1>🏝️ Archipelagod</h1>
+      <p>Build your island. Grow your people. Trade with the world.</p>
+      <input id="name-input" type="text" placeholder="Your name" maxlength="20" autofocus>
+      <button id="join-btn">Join Game</button>
+    </div>
+  </div>
+
+  <!-- Game screen -->
+  <div id="game-screen" class="hidden">
+    <header>
+      <h2 id="island-name">🏝️</h2>
+      <div id="hud">
+        <span id="hud-pop">👥 0</span>
+        <span id="hud-happy">😊 0%</span>
+        <span id="hud-food">🌾 0</span>
+        <span id="hud-ore">⛏️ 0</span>
+        <span id="hud-timber">🪵 0</span>
+        <span id="hud-fish">🐟 0</span>
+      </div>
+    </header>
+
+    <main>
+      <section id="my-island">
+        <h3>My Island <span id="island-type-badge"></span></h3>
+
+        <div id="buildings-panel">
+          <h4>Buildings</h4>
+          <div id="buildings-list"></div>
+        </div>
+
+        <div id="build-panel">
+          <h4>Build</h4>
+          <div id="build-buttons"></div>
+        </div>
+      </section>
+
+      <section id="world-panel">
+        <h3>🌍 World</h3>
+        <div id="islands-list"></div>
+      </section>
+
+      <section id="trade-panel">
+        <h3>🤝 Trade</h3>
+        <div id="trade-offers-list"><em>No active trade offers</em></div>
+        <div id="new-trade" class="hidden">
+          <h4>Make an offer</h4>
+          <div class="trade-form">
+            <label>Offer: <input type="number" id="offer-amount" min="1" value="10">
+              <select id="offer-resource">
+                <option value="food">🌾 Food</option>
+                <option value="ore">⛏️ Ore</option>
+                <option value="timber">🪵 Timber</option>
+                <option value="fish">🐟 Fish</option>
+              </select>
+            </label>
+            <label>Want: <input type="number" id="want-amount" min="1" value="10">
+              <select id="want-resource">
+                <option value="ore">⛏️ Ore</option>
+                <option value="food">🌾 Food</option>
+                <option value="timber">🪵 Timber</option>
+                <option value="fish">🐟 Fish</option>
+              </select>
+            </label>
+            <button id="post-trade-btn">Post Offer</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="chat-panel">
+        <h3>💬 Chat</h3>
+        <div id="chat-log"></div>
+        <div class="chat-input-row">
+          <input id="chat-input" type="text" placeholder="Say something…" maxlength="200">
+          <button id="chat-send-btn">Send</button>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="src/constants.js"></script>
+  <script src="src/game.js"></script>
+</body>
+</html>
