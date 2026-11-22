@@ -391,8 +391,27 @@ function getTileCanvases() {
 // viewX/Y: top-left tile to show (defaults centred on island)
 function renderIslandMap(canvas, island, viewX, viewY) {
   if (!island) return;
-  const vw = window.VIEW_W || VIEW_W;
-  const vh = window.VIEW_H || VIEW_H;
+
+  // Fit tile count to actual container size so map always fills the box
+  const container = canvas.parentElement;
+  const cssW = container ? container.clientWidth  : window.innerWidth;
+  const cssH = container ? container.clientHeight : window.innerHeight;
+  // If layout hasn't resolved yet, defer one frame
+  if (!window._zoomOverride && (!cssW || !cssH)) {
+    requestAnimationFrame(() => window.renderIslandMap?.(canvas, island, viewX, viewY));
+    return;
+  }
+  // Apply zoom override if set, else derive from container
+  let vw, vh;
+  if (window._zoomOverride) {
+    vw = window.VIEW_W || VIEW_W;
+    vh = window.VIEW_H || VIEW_H;
+  } else {
+    vw = Math.max(8, Math.min(MAP_W, Math.floor(cssW / TILE)));
+    vh = Math.max(6, Math.min(MAP_H, Math.floor(cssH / TILE)));
+    window.VIEW_W = vw;
+    window.VIEW_H = vh;
+  }
 
   // Centre view on start of island if not given
   if (viewX === undefined) viewX = Math.max(0, Math.floor(MAP_W / 2) - Math.floor(vw / 2));
@@ -585,14 +604,21 @@ const ZOOM_CONFIGS = [
 let _zoomLevel = 1;
 
 function setZoom(canvas, island, level) {
-  _zoomLevel = Math.max(0, Math.min(ZOOM_CONFIGS.length - 1, level));
-  const cfg = ZOOM_CONFIGS[_zoomLevel];
-  // Update module-level VIEW_W/H
-  window.VIEW_W = cfg.vw;
-  window.VIEW_H = cfg.vh;
-  // Re-centre view
-  const vx = Math.max(0, Math.min(MAP_W - cfg.vw, (canvas._viewX || 0)));
-  const vy = Math.max(0, Math.min(MAP_H - cfg.vh, (canvas._viewY || 0)));
+  if (level === 1) {
+    // Normal zoom = auto-fit to container (no override)
+    window._zoomOverride = false;
+    window.VIEW_W = null;
+    window.VIEW_H = null;
+    _zoomLevel = 1;
+  } else {
+    _zoomLevel = Math.max(0, Math.min(ZOOM_CONFIGS.length - 1, level));
+    const cfg = ZOOM_CONFIGS[_zoomLevel];
+    window._zoomOverride = true;
+    window.VIEW_W = cfg.vw;
+    window.VIEW_H = cfg.vh;
+  }
+  const vx = canvas._viewX || 0;
+  const vy = canvas._viewY || 0;
   renderIslandMap(canvas, island, vx, vy);
 }
 
